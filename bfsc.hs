@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 import Data.Char
 import Data.List
@@ -47,7 +49,9 @@ initBF = BFMachine [0] []
 type BFExec = RWS () Char BFMachine
 
 state_ f = state $ \s -> ((), f s)
-peek = rws (\() s@(BFMachine (x:_) _) -> (x,s,""))
+
+peek :: (MonadState BFMachine m) => m Word8
+peek = get >>= \(BFMachine (x:_) _) -> return x
 
 iLeft (BFMachine [x]   r) = BFMachine [0] (x:r)
 iLeft (BFMachine (x:l) r) = BFMachine l   (x:r)
@@ -68,6 +72,7 @@ exec l@(Loop prog) = do
 		0 -> return ()
 		_ -> execMany prog >> exec l
 
+runBF :: BFProg -> (BFMachine, String)
 runBF bf = execRWS (execMany (code bf)) () initBF
 
 data BFProg = BFProg { cost :: Int, code :: [BF] }
@@ -80,9 +85,7 @@ instance Show BFProg where
 	show = show . code
 
 bfprog bf = BFProg (ccost bf) bf where
-	ccost = sum . map icost
-	icost (Loop p) = ccost p + 2
-	icost _        = 1
+	ccost = length . show
 
 instance Monoid BFProg where
 	mempty = BFProg 0 []
@@ -104,11 +107,25 @@ inc = bfprog [Up]
 dec = bfprog [Down]
 loop = bfprog . (:[]) . Loop
 
+type BFCompile = RWS () BFProg BFMachine 
+
+compile prog  = snd $ execRWS prog () initBF
+
+emit :: BFProg -> BFCompile ()
+emit prog = do
+	st <- get
+	let (st',_) = execRWS (execMany . code $ prog) () st 
+	put st'
+	writer ((), prog) 
 
 linear :: Word8 -> BFProg
 linear x | x > 127   = bfprog (replicate (fromIntegral $ 256 - x ) Down)
          | otherwise = bfprog (replicate (fromIntegral x) Up)
 
+useLinear :: Word8 -> BFCompile ()
+useLinear t = do
+	x <- peek
+	emit $ linear (t - x) <> out 
 
 mult a = bfprog [Loop ((MRight : code (linear a)) ++ [MLeft,Down]), MRight] 
 --mult a = right <> linear a <> loop ( left 
