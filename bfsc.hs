@@ -161,7 +161,7 @@ loop = bfprog . (:[]) . Loop . code
 {- Un type monadique pour représenter la compilation de code. L'état est une machine BFMachine,
  - mais le Writer ne correspond plus aux outputs de la machine, mais au code produit par le compilateur.
  - On peut donc émettre du code dans un but précis, en tenant en compte les états initiaux et finaux de la machine -}
-type BFCompile = RWS () BFProg BFMachine 
+type BFCompile = RWST () BFProg BFMachine []
 
 {- Une fonction dans la monade BFCompile pour émettre un morceau de code fixe.
  - on lit l'état courant de la machine, on exécute le morceau de code, et on
@@ -173,6 +173,13 @@ emit prog = do
 	let (st',_) = execRWS (execMany . code $ prog) () st 
 	put st'
 	writer ((), prog) 
+
+trd (_,_,x) = x
+
+{- Elimine localement les solutions les moins bonnes dans le
+ - contexte d'un BFCompile -}
+prune :: BFCompile () -> BFCompile ()
+prune = RWST . ((((:[]) . minimumBy (comparing trd)).).)  .  runRWST
 
 {- Un BFProg qui réalise l'addition naive par une constante, en répétant
  - n fois un + ou un - -}
@@ -240,7 +247,7 @@ optimize = bfprog . cuthead . efix identities . code
 
 {- Exécution d'un BFCompile pour en extraire le code, et optimisation du code -}
 compile :: BFCompile () -> BFProg
-compile prog  = optimize . snd $ execRWS prog () initBF
+compile prog  = minimum . map (optimize . snd) $ execRWST prog () initBF
 
 
 {- Exemple:
