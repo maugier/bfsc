@@ -210,6 +210,8 @@ useLinear = useRelative linear
  - supposant que la cellule à la droite de la cellule courante vaut 0 -}
 mult a = loop (right <> linear a <> left <> dec)
 
+idiv a = loop (right <> inc <> left <> linear (negate a))
+
 {- Un BFProg qui effectue une multiplication sur un vecteur -}
 
 vmult v = loop (expand v <> dec) where
@@ -222,16 +224,23 @@ linears = [ (x, linear x) | x <- [0 .. 255] ]
 {- Toutes les transformations affines sur une valeur -}
 affines = [ (a*b+c, left <> linear a <> mult b <> right <> linear c) | a <- [2..16], b <- [a..255], c <- [0..a] ]
 
+inverse_affines = [ (a+c , left <> linear (a*b) <> idiv b <> right <> linear c) | a <- [1..255], b <- [2..15], (a*b) < 15,  c <- [0..255]] 
+
 {- Une table des meilleures techniques pour effectuer une addition par n, en considérant soit une addition linéaire,
  - soit une multiplication suivie d'une addition. On utilise simplement la fonction min pour éliminer les doublons
  - en gardant le code le plus court -}
-bestTable = M.fromListWith min (linears ++ affines)
+bestTable = M.fromListWith min (linears ++ affines ++ inverse_affines)
 
 best = (bestTable M.!)
 
 {- Un BFCompile qui produit une valeur par addition relative d'une des techniques précitées -}
 useBest :: Word8 -> BFCompile ()
 useBest = useRelative best
+
+useMult y = do
+	x <- peek
+	if x > y then mzero
+	         else emit (mult (x `div` y) <> best (x `mod` y))
 
 {- Un BFCompile qui produit un string, en séquencant simplement useBest sur la 
  - valeur ascii de chaque caracère -}
