@@ -248,7 +248,7 @@ vectorStart = emit (best 18 <> vmult [2,4,5,6]) `mplus`
 vectorPrintChar c = pickSomeCell >> useLinear (fromIntegral.ord $ c)
 
 vectorPrint' []     = return ()
-vectorPrint' (x:xs) = prune 3 (vectorPrintChar x) >> vectorPrint' xs 
+vectorPrint' (x:xs) = prune 1 (vectorPrintChar x) >> vectorPrint' xs 
 
 vectorPrint = (vectorStart >>) . vectorPrint'
 
