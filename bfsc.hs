@@ -87,6 +87,13 @@ iLeft (BFMachine (x:l) r) = BFMachine l   (x:r)
 iRight (BFMachine l [])    = BFMachine (0:l) []
 iRight (BFMachine l (x:r)) = BFMachine (x:l) r
 
+{- Tests pour savoir si le pointeur est au bout de la bande -}
+leftmost (BFMachine [_] _) = True
+leftmost _                 = False
+
+rightmost (BFMachine _ []) = True
+rightmost _                = False
+
 {- Exécution des instructions (type BF) au sein d'une State Monad sur BFMachine: -}
 
 -- Pour exécuter plusieurs instructions, on séquence simplement leurs actions
@@ -148,7 +155,7 @@ reset :: BFProg
 reset = read "[-]"
 
 stop :: BFProg
-stop = bfprog []
+stop = mempty
 
 left = bfprog [MLeft]
 right = bfprog [MRight]
@@ -178,8 +185,8 @@ trd (_,_,x) = x
 
 {- Elimine localement les solutions les moins bonnes dans le
  - contexte d'un BFCompile -}
-prune :: BFCompile () -> BFCompile ()
-prune = RWST . ((((:[]) . minimumBy (comparing trd)).).)  .  runRWST
+prune :: Int -> BFCompile () -> BFCompile ()
+prune n = RWST . (((take n . sortBy (comparing trd)).).)  .  runRWST
 
 {- Un BFProg qui réalise l'addition naive par une constante, en répétant
  - n fois un + ou un - -}
@@ -202,6 +209,12 @@ useLinear = useRelative linear
  - supposant que la cellule à la droite de la cellule courante vaut 0 -}
 mult a = loop (right <> linear a <> left <> dec)
 
+{- Un BFProg qui effectue une multiplication sur un vecteur -}
+
+vmult v = loop (expand v <> dec) where
+	expand [] = mempty
+	expand (x:xs) = right <> linear x <> expand xs <> left
+
 {- Toutes les manières d'obtenir une addition par x en utilisant l'addition linéaire naive -}
 linears = [ (x, linear x) | x <- [0 .. 255] ]
 
@@ -223,6 +236,33 @@ useBest = useRelative best
  - valeur ascii de chaque caracère -}
 naivePrint :: String -> BFCompile ()
 naivePrint = mapM_ (useBest . fromIntegral . ord)
+
+{- Une routine qui initialise un tableau bien adapté au texte ASCII -}
+vectorStart = emit (best 32 <> vmult [1,2,3]) `mplus` emit (best 8 <> vmult [5,7,9])
+
+{- Un BFCompile qui utilise la stratégie linéaire sur l'array existant, minimisant
+ - la taille du code à chaque étape intermédiaire -}
+vectorPrint' =  mapM_ (prune 10 . (pickSomeCell >>) . useLinear . fromIntegral . ord)
+
+vectorPrint = (vectorStart >>) . vectorPrint'
+
+{- Un déplacement non-déterministe vers une cellule initialisée -}
+
+pickSomeCell :: BFCompile ()
+pickSomeCell = return () `mplus` pickLeft `mplus` pickRight
+
+pickLeft = do
+	s <- get
+	if leftmost s
+		then mzero
+		else emit left >> (return () `mplus` pickLeft)
+
+pickRight = do
+	s <- get
+	if rightmost s
+		then mzero
+		else emit right >> (return () `mplus` pickRight)
+
 
 {- Une passe d'optimisation naive qui élimine les opérations inverses -}
 identities :: [BF] -> [BF]
