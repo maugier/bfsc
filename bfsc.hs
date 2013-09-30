@@ -7,6 +7,7 @@ import Data.Word
 import Control.Monad.RWS
 import Data.Ord (comparing)
 import qualified Data.Map as M
+import System.Environment
 
 
 {- Un datatype de tous les programmes BF bien formés. La définition récursive de Loop 
@@ -238,11 +239,16 @@ naivePrint :: String -> BFCompile ()
 naivePrint = mapM_ (useBest . fromIntegral . ord)
 
 {- Une routine qui initialise un tableau bien adapté au texte ASCII -}
-vectorStart = emit (best 32 <> vmult [1,2,3]) `mplus` emit (best 8 <> vmult [5,7,9])
+vectorStart = emit (best 18 <> vmult [2,4,5,6]) `mplus` 
+              emit (best 32 <> vmult [1,2,3])
 
 {- Un BFCompile qui utilise la stratégie linéaire sur l'array existant, minimisant
  - la taille du code à chaque étape intermédiaire -}
-vectorPrint' =  mapM_ (prune 10 . (pickSomeCell >>) . useLinear . fromIntegral . ord)
+
+vectorPrintChar c = pickSomeCell >> useLinear (fromIntegral.ord $ c)
+
+vectorPrint' []     = return ()
+vectorPrint' (x:xs) = prune 3 (vectorPrintChar x) >> vectorPrint' xs 
 
 vectorPrint = (vectorStart >>) . vectorPrint'
 
@@ -293,5 +299,12 @@ compile prog  = minimum . map (optimize . snd) $ execRWST prog () initBF
 {- Exemple:
  -
  - *Main> compile $ naivePrint "hello world !"
- - ++++++++[>+++++++++++++<-]>.---.+++++++..+++.<++++++++++[>--------<-]>+.<+++++++[>++++++++++++<-]>+++.--------.+++.------.--------.<++++++++++[>-------<-]>++.+.
+   ++++++++[>+++++++++++++<-]>.---.+++++++..+++.<++++++++++[>--------<-]>+.<+++++++[>++++++++++++<-]>+++.--------.+++.------.--------.<++++++++++[>-------<-]>++.+.
+ -
+ - *Main> compile $ vectorPrint "a B c"
+   ++++[>++++++++<-]>[>+>++>+++<<<-]>>>+.<<.>++.<.>>++.
+
+ -
  -}
+
+main = getArgs >>= print . compile . vectorPrint . unwords
