@@ -229,6 +229,10 @@ bestTable = M.fromListWith min (linears ++ affines)
 
 best = (bestTable M.!)
 
+affines' = [(a*b+c, left <> best a <> mult b <> right <> best c) | a <- [2..16], b <- [a..255], c <- [0..a]]
+
+bestTable' = M.fromListWith min (linears ++ affines ++ affines')
+
 {- Un BFCompile qui produit une valeur par addition relative d'une des techniques précitées -}
 useBest :: Word8 -> BFCompile ()
 useBest = useRelative best
