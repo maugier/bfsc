@@ -109,6 +109,7 @@ vectorPrintChar c = pickSomeCell >> useLinear (fromIntegral.ord $ c)
 vectorPrint' []     = return ()
 vectorPrint' (x:xs) = prune 1 (vectorPrintChar x) >> vectorPrint' xs 
 
+vectorPrint :: String -> BFCompile ()
 vectorPrint = (vectorStart >>) . vectorPrint'
 
 {- Un déplacement non-déterministe vers une cellule initialisée -}
