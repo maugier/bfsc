@@ -25,6 +25,21 @@ showBy s = concat . intersperse s . map show
 instance Show w => Show (BFMachine w) where
 	show (BFMachine (x:l) r) = showBy "|" (reverse l) ++ "(" ++ show x ++ ")" ++ showBy "|"  r
 
+{- Appliquer une transformation à toutes les cellules initialisées.
+ - Utiliser uniquement avec des fonctions préservant le 0. -}
+instance Functor BFMachine where
+    fmap f (BFMachine xs ys) = BFMachine (fmap f xs) (fmap f ys)
+
+
+{- Utile pour les fonctions linéaires -}
+lzip _ xs [] = xs
+lzip _ [] ys = ys
+lzip f (x:xs) (y:ys) = f x y : lzip f xs ys
+
+BFMachine al ar |+| BFMachine bl br = BFMachine (lzip (+) al bl) (lzip (+) ar br)
+
+
+
 -- Etat initial de la machine BF: une seule case à 0
 initBF :: Num w => BFMachine w
 initBF = BFMachine [0] []
