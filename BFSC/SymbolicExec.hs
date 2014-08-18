@@ -30,7 +30,28 @@ exec Up = onMachine $ onPtr (+1)
 exec Down = onMachine $ onPtr (subtract 1)
 exec (Loop [Down]) = onMachine $ onPtr (const 0)
 exec (Loop [Up])   = onMachine $ onPtr (const 0)
-exec _             = error "Unsupported program for symbolic execute"
+exec (Loop loop) | isLinear loop = execLinearLoop loop
+                 | otherwise = error "Unsupported program for symbolic execute"
+
+execLinearLoop :: [BF] -> SymbolicRun ()
+execLinearLoop loop = do
+    let [((_,result), _)] = symbolicExec loop initBF
+    machine <- fmap snd get
+    let cur = getPtr machine :: Cell
+    onMachine $ (|+| fmap (* negate cur) result)
 
 symbolicExec :: [BF] -> BFMachine Cell -> [(SymbolicState, [Cell])]
 symbolicExec program init = execRWST (execMany program) () (empty, init)
+
+linearOp MLeft = True
+linearOp MRight = True
+linearOp Up = True
+linearOp Down = True
+linearOp (Nop _) = True
+
+balance MLeft = -1
+balance MRight = 1
+balance _ = 0
+
+isLinear prog = all linearOp prog && sum (fmap balance prog) == 0
+
