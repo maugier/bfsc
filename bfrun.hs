@@ -1,4 +1,4 @@
-import BFSC.Base
+import BFSC.Exec
 
 main = getContents >>= print . runBF . read
 

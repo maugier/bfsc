@@ -3,7 +3,8 @@
 
 module BFSC.Compile where
 
-import BFSC.Base
+import BFSC.Lang
+import BFSC.Exec
 import Data.Char
 import Data.List
 import Data.Word
@@ -15,7 +16,7 @@ import System.Environment
 {- Un type monadique pour représenter la compilation de code. L'état est une machine BFMachine,
  - mais le Writer ne correspond plus aux outputs de la machine, mais au code produit par le compilateur.
  - On peut donc émettre du code dans un but précis, en tenant en compte les états initiaux et finaux de la machine -}
-type BFCompile = RWST () BFProg BFMachine []
+type BFCompile = RWST () BFProg (BFMachine Word8) []
 
 {- Une fonction dans la monade BFCompile pour émettre un morceau de code fixe.
  - on lit l'état courant de la machine, on exécute le morceau de code, et on
