@@ -71,10 +71,11 @@ initBF = BFMachine [0] []
 {- Type monadique RWS représentant l'exécution d'instructions BF. 
  - pas de Reader (type ()), un Writer Char pour la sortie des caractères,
  - et un State BFMachine. -}
-type BFExec = RWS () Char BFMachine
+type BFExec = RWS () String BFMachine
 
 -- helper, state_ est comme state mais en ignorant la valeur de retour
-state_ f = state $ \s -> ((), f s)
+state_ :: (MonadState s m) => (s -> s) -> m ()
+state_ f = get >>= put . f
 
 -- Opération monadique pour lire la valeur de la cellule en cours
 peek :: (MonadState BFMachine m) => m Word8
@@ -106,7 +107,7 @@ exec MLeft  = state_ $ iLeft
 exec MRight = state_ $ iRight
 exec Up    = state_ $ \(BFMachine (x:l) r) -> BFMachine ((x+1):l) r
 exec Down  = state_ $ \(BFMachine (x:l) r) -> BFMachine ((x-1):l) r
-exec Out   = peek >>= \x -> writer ((), [chr (fromIntegral x)])
+exec Out   = do { x <- peek; tell [chr (fromIntegral x)] }
 exec l@(Loop prog) = do   -- exécution d'une boucle
 	x <- peek         -- on récupère la valeur du ptr courant
 	case x of 
