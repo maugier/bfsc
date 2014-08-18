@@ -13,7 +13,7 @@ import qualified Data.Map as M
 
 {- Un datatype de tous les programmes BF bien formés. La définition récursive de Loop 
  - permet d'exclure les crochets déséquilibrés -}
-data BF = MLeft | MRight | Up | Down | Out | Loop [BF] | Nop Char
+data BF = MLeft | MRight | Up | Down | In | Out | Loop [BF] | Nop Char
 	deriving Eq
 
 {- Affichage du type BF, sans commentaires -}
@@ -22,6 +22,7 @@ instance Show BF where
 	show MRight = ">"
 	show Up = "+"
 	show Down = "-"
+	show In = ","
 	show Out = "."
 	show (Loop bf) = "[" ++ show bf ++ "]"
 	show (Nop c) = [c]
@@ -33,6 +34,7 @@ readBF ('+':s) = [(Up, s)]
 readBF ('-':s) = [(Down, s)]
 readBF ('<':s) = [(MLeft, s)]
 readBF ('>':s) = [(MRight, s)]
+readBF (',':s) = [(In, s)]
 readBF ('.':s) = [(Out, s)]
 readBF ('[':s) = [(Loop p, t) | (p, (']':t) ) <- readBFList s ] -- lecture des paires de crochets
 readBF (x:s)   = [(Nop x, s)]
