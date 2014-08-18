@@ -5,6 +5,8 @@ module BFSC.Compile where
 
 import BFSC.Lang
 import BFSC.Exec
+import BFSC.Machine
+
 import Data.Char
 import Data.List
 import Data.Word

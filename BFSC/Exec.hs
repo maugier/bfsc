@@ -4,6 +4,7 @@
 module BFSC.Exec where
 
 import BFSC.Lang
+import BFSC.Machine
 
 import Data.Char
 import Data.List
