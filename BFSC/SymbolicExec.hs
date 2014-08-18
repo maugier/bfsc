@@ -1,39 +1,22 @@
-{-
- - Symbolic Execution module
- -}
+module BFSC.SymbolicExec where
 
+import BFSC.Lang
+import BFSC.Expr
+import BFSC.Machine
 
-import BFSC.Base
-import Data.Map
+import Control.Monad.RWS
 import Data.Word
-import Data.List
-
-newtype Var f = Var (Map [String] f)
-
-constant :: t -> Var t
-constant x = Var (singleton [] x)
-
-var :: Num t => String -> Var t
-var s = Var (singleton [s] 1)
-
-instance (Eq t, Num t) => Num (Var t) where
-    fromInteger = constant . fromInteger
-    negate (Var x) = Var (fmap negate x)
-    Var a + Var b = Var (Data.Map.filter (/= 0) $ unionWith (+) a b)
-    Var a * Var b = Var $ fromListWith (+) [ (sort (ka ++ kb), va*vb) | (ka,va) <- toList a, (kb,vb) <- toList b ]
-
-instance (Show t, Num t, Eq t) => Show (Var t) where
-    show (Var x) = concat $ intersperse "+" [ (showMonom v k) | (k,v) <- toList x ]
-
-showMonom v [] = show v
-showMonom 1 ks = concat $ intersperse "*" ks
-showMonom v ks = concat $ intersperse "*" (show v : ks)
+import Data.Map
 
 type Cell = Var Word8
 
-data SymbolicMachine = SymbolicMachine [Cell] [Cell]
+type VarBinds = Map String (Either Word8 Word8)
 
-initSM = SymbolicMachine [0] []
+type SymbolicState = (VarBinds, BFMachine Cell)
 
---type SymbolicExec = RWS () [Var] SymbolicMachine
+type SymbolicRun = RWST () String SymbolicState []
 
+execMany = mapM_ exec
+
+exec :: BF -> SymbolicRun ()
+exec = undefined
