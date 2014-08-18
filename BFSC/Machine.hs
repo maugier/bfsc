@@ -1,6 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module BFSC.Machine where
 
 import Data.List (intersperse)
+import Control.Monad.State
 
 {- Un datatype pour la machine virtuelle BF. Il s'agit d'un zipper, la première
  - liste représente les éléments à gauche dans l'ordre inverse, le premier élément
@@ -25,3 +28,26 @@ instance Show w => Show (BFMachine w) where
 -- Etat initial de la machine BF: une seule case à 0
 initBF :: Num w => BFMachine w
 initBF = BFMachine [0] []
+-- helper, state_ est comme state mais en ignorant la valeur de retour
+state_ :: (MonadState s m) => (s -> s) -> m ()
+state_ f = get >>= put . f
+
+-- Opération monadique pour lire la valeur de la cellule en cours
+peek :: (MonadState (BFMachine w) m) => m w
+peek = get >>= \(BFMachine (x:_) _) -> return x
+
+{- Déplacement du pointeur à gauche/à droite: on copie le premier
+ - élément de la liste gauche/droite en tête de l'autre liste. Au
+ - cas ou une cellule n'est pas initialisée, on l'initialise à 0 maintenant -}
+iLeft (BFMachine [x]   r) = BFMachine [0] (x:r)
+iLeft (BFMachine (x:l) r) = BFMachine l   (x:r)
+
+iRight (BFMachine l [])    = BFMachine (0:l) []
+iRight (BFMachine l (x:r)) = BFMachine (x:l) r
+
+{- Tests pour savoir si le pointeur est au bout de la bande -}
+leftmost (BFMachine [_] _) = True
+leftmost _                 = False
+
+rightmost (BFMachine _ []) = True
+rightmost _                = False

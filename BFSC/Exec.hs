@@ -18,29 +18,6 @@ import qualified Data.Map as M
  - et un State BFMachine. -}
 type BFExec = RWS () String (BFMachine Word8)
 
--- helper, state_ est comme state mais en ignorant la valeur de retour
-state_ :: (MonadState s m) => (s -> s) -> m ()
-state_ f = get >>= put . f
-
--- Opération monadique pour lire la valeur de la cellule en cours
-peek :: (MonadState (BFMachine w) m) => m w
-peek = get >>= \(BFMachine (x:_) _) -> return x
-
-{- Déplacement du pointeur à gauche/à droite: on copie le premier
- - élément de la liste gauche/droite en tête de l'autre liste. Au
- - cas ou une cellule n'est pas initialisée, on l'initialise à 0 maintenant -}
-iLeft (BFMachine [x]   r) = BFMachine [0] (x:r)
-iLeft (BFMachine (x:l) r) = BFMachine l   (x:r)
-
-iRight (BFMachine l [])    = BFMachine (0:l) []
-iRight (BFMachine l (x:r)) = BFMachine (x:l) r
-
-{- Tests pour savoir si le pointeur est au bout de la bande -}
-leftmost (BFMachine [_] _) = True
-leftmost _                 = False
-
-rightmost (BFMachine _ []) = True
-rightmost _                = False
 
 {- Exécution des instructions (type BF) au sein d'une State Monad sur BFMachine: -}
 
