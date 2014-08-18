@@ -13,7 +13,7 @@ import qualified Data.Map as M
 
 {- Un datatype de tous les programmes BF bien formés. La définition récursive de Loop 
  - permet d'exclure les crochets déséquilibrés -}
-data BF = MLeft | MRight | Up | Down | Out | Loop [BF]
+data BF = MLeft | MRight | Up | Down | Out | Loop [BF] | Nop Char
 	deriving Eq
 
 {- Affichage du type BF, sans commentaires -}
@@ -24,6 +24,7 @@ instance Show BF where
 	show Down = "-"
 	show Out = "."
 	show (Loop bf) = "[" ++ show bf ++ "]"
+	show (Nop c) = [c]
 	showList [] rest     = rest
 	showList (x:xs) rest = show x ++ (showList xs rest)
 
@@ -34,6 +35,7 @@ readBF ('<':s) = [(MLeft, s)]
 readBF ('>':s) = [(MRight, s)]
 readBF ('.':s) = [(Out, s)]
 readBF ('[':s) = [(Loop p, t) | (p, (']':t) ) <- readBFList s ] -- lecture des paires de crochets
+readBF (x:s)   = [(Nop x, s)]
 readBF _       = []
 
 readBFList [] = [([],[])]
@@ -113,6 +115,7 @@ exec l@(Loop prog) = do   -- exécution d'une boucle
 	case x of 
 		0 -> return ()                -- si 0, stop
 		_ -> execMany prog >> exec l  -- sinon, on exécute le contenu de la boucle, et on recommence
+exec (Nop _) = return ()
 
 {- Définition du type BFProg, qui contient une liste d'instructions BF
  - et un calcul de la longueur du programme (en cache pour l'efficacité) -}
