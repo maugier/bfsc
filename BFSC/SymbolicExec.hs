@@ -38,7 +38,7 @@ execLinearLoop loop = do
     let [((_,result), _)] = symbolicExec loop initBF
     machine <- fmap snd get
     let cur = getPtr machine :: Cell
-    onMachine $ (|+| fmap (* negate cur) result)
+    onMachine $ (|+| fmap (* cur) result)
 
 symbolicExec :: [BF] -> BFMachine Cell -> [(SymbolicState, [Cell])]
 symbolicExec program init = execRWST (execMany program) () (empty, init)
