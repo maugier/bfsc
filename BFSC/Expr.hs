@@ -24,7 +24,8 @@ instance (Eq t, Num t) => Num (Var t) where
     signum = undefined
 
 instance (Show t, Num t, Eq t) => Show (Var t) where
-    show (Var x) = concat $ intersperse "+" [ (showMonom v k) | (k,v) <- toList x ]
+    show (Var x) | Data.Map.null x = "0"
+                 | otherwise = concat $ intersperse "+" [ (showMonom v k) | (k,v) <- toList x ]
 
 showMonom v [] = show v
 showMonom 1 ks = concat $ intersperse "*" ks
