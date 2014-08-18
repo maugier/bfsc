@@ -63,7 +63,7 @@ showBy s = concat . intersperse s . map show
  - Exemple: 0|1|2[3]4|5 -}
 
 instance Show BFMachine where
-	show (BFMachine (x:l) r) = showBy "|" (reverse l) ++ "[" ++ show x ++ "]" ++ showBy "|"  r
+	show (BFMachine (x:l) r) = showBy "|" (reverse l) ++ "(" ++ show x ++ ")" ++ showBy "|"  r
 
 -- Etat initial de la machine BF: une seule case à 0
 initBF = BFMachine [0] []
