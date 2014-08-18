@@ -59,37 +59,6 @@ exec l@(Loop prog) = do   -- exécution d'une boucle
 		_ -> execMany prog >> exec l  -- sinon, on exécute le contenu de la boucle, et on recommence
 exec (Nop _) = return ()
 
-{- Définition du type BFProg, qui contient une liste d'instructions BF
- - et un calcul de la longueur du programme (en cache pour l'efficacité) -}
-data BFProg = BFProg { cost :: Int, code :: [BF] }
-	deriving Eq
-
-{- Pour wrapper une liste d'instructions BF dans un BFProg, on calcule simplement le cout
- - comme la longeur apparente du programme -}
-bfprog bf = BFProg (ccost bf) bf where
-	ccost = length . show
-
-{- Pour parser un BFProg, on parse une liste de BF et on calcule le coût après -}
-instance Read BFProg where
-	readsPrec i s = [ (bfprog p, r) | (p,r) <- readsPrec i s ]
-
-{- Pour afficher un BFProg, on affiche seulement son code -}
-instance Show BFProg where
-	show = show . code
-
-{- Les BFProg sont concaténatifs: on définit le programme vide, et la concaténation
- - de programmes (avec addition du coût)
- -
- - Ceci permet d'utiliser l'opérateur <> pour combiner des BFProgs -}
-instance Monoid BFProg where
-	mempty = BFProg 0 []
-	mappend (BFProg l1 p1) (BFProg l2 p2) = BFProg (l1+l2) (p1++p2)
-
-{- Définition d'un ordre naturel pour les BFProg.
- - On les compare suivant le cout, ce qui permet d'obtenir facilement
- - le moins long des programmes via un appel aux fonction min ou minimum -}
-instance Ord BFProg where
-	compare = comparing cost
 
 {- Exécution rapide d'un BFProg, en produisant l'état final de la machine et la sortie.
  - on utilise simplement la monade RWS, en partant d'une machine mise à 0 -}
