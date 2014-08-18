@@ -25,10 +25,11 @@ type BFExec = RWS () String (BFMachine Word8)
 execMany = mapM_ exec
 
 -- Exécution individuelle de chaque opération
+exec :: BF -> BFExec ()
 exec MLeft  = state_ $ iLeft
 exec MRight = state_ $ iRight
-exec Up    = state_ $ \(BFMachine (x:l) r) -> BFMachine ((x+1):l) r
-exec Down  = state_ $ \(BFMachine (x:l) r) -> BFMachine ((x-1):l) r
+exec Up    = state_ $ onPtr (+ 1)
+exec Down  = state_ $ onPtr (subtract 1)
 exec Out   = do { x <- peek; tell [chr (fromIntegral x)] }
 exec l@(Loop prog) = do   -- exécution d'une boucle
 	x <- peek         -- on récupère la valeur du ptr courant
