@@ -69,3 +69,5 @@ rightmost _                = False
 
 onPtr :: (w -> w) -> BFMachine w -> BFMachine w
 onPtr f (BFMachine (x:xs) ys) = BFMachine (f x : xs) ys
+
+getPtr (BFMachine (x:_) _) = x
