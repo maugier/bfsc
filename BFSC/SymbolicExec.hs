@@ -55,6 +55,7 @@ allocVar = do
 execMany = mapM_ exec
 
 exec :: BF -> SymbolicRun ()
+exec (Nop _) = return ()
 exec Out = do { st <- get; tell [getPtr (syMachine st)] }
 exec In = allocVar >>= onMachine . onPtr . const . var 
 exec MLeft = onMachine iLeft
@@ -81,7 +82,10 @@ execLinearLoop loop = do
     let result = syMachine st
     machine <- fmap syMachine get
     let cur = getPtr machine :: Cell
-    onMachine $ (|+| fmap (* cur) result)
+    case getPtr result of
+        (-1) -> onMachine $ (|+| fmap (* cur) result)
+        1    -> onMachine $ (|+| fmap (* negate cur) result)
+        _    -> error $ "Division is not supported yet (subprogram " ++ show loop ++ ")"
 
 symbolicExec :: [BF] -> BFMachine Cell -> [(SymbolicState, [Cell])]
 symbolicExec program init = execRWST (execMany program) () (SymbolicState empty empty init 0)
