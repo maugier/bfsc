@@ -41,7 +41,7 @@ assert cell True = onConstraints (insert cell True)
 assert cell False = do  
     sols <- solveSimple cell
     case sols of
-        Nothing -> return ()
+        Nothing -> onConstraints (insert cell False)
         Just (var,val) -> bind var val
 
 
