@@ -19,15 +19,16 @@ type Constraints = Map Cell Bool
 type Varbinds    = Map String Word8
 data SymbolicState = SymbolicState { syConstraints :: Constraints,
                                      syVarbinds    :: Varbinds,
-                                     syMachine     :: BFMachine Cell }
+                                     syMachine     :: BFMachine Cell,
+                                     syVarCounter  :: Int }
     deriving Show
 
 
 type SymbolicRun = RWST () [Cell] SymbolicState []
 
-onMachine f     = state_ (\(SymbolicState c v m) -> SymbolicState c v (f m))
-onBinds f       = state_ (\(SymbolicState c v m) -> SymbolicState c (f v) m)
-onConstraints f = state_ (\(SymbolicState c v m) -> SymbolicState (f c) v m)
+onMachine f     = state_ (\(SymbolicState c v m i) -> SymbolicState c v (f m) i)
+onBinds f       = state_ (\(SymbolicState c v m i) -> SymbolicState c (f v) m i)
+onConstraints f = state_ (\(SymbolicState c v m i) -> SymbolicState (f c) v m i)
 
 
 bind :: String -> Word8 -> SymbolicRun ()
@@ -44,16 +45,18 @@ assert cell False = do
         Just (var,val) -> bind var val
 
 
-
-{-
-assert cell val = do 
-                | otherwise = onBinds (insert cell val) -}
+allocVar :: SymbolicRun String
+allocVar = do
+    (SymbolicState c v m i) <- get
+    put $ SymbolicState c v m (i+1)
+    return $ "in" ++ show i
 
 
 execMany = mapM_ exec
 
 exec :: BF -> SymbolicRun ()
 exec Out = do { st <- get; tell [getPtr (syMachine st)] }
+exec In = allocVar >>= onMachine . onPtr . const . var 
 exec MLeft = onMachine iLeft
 exec MRight = onMachine iRight
 exec Up = onMachine $ onPtr (+1)
@@ -81,7 +84,7 @@ execLinearLoop loop = do
     onMachine $ (|+| fmap (* cur) result)
 
 symbolicExec :: [BF] -> BFMachine Cell -> [(SymbolicState, [Cell])]
-symbolicExec program init = execRWST (execMany program) () (SymbolicState empty empty init)
+symbolicExec program init = execRWST (execMany program) () (SymbolicState empty empty init 0)
 
 linearOp MLeft = True
 linearOp MRight = True
