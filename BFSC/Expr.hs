@@ -5,21 +5,24 @@
 module BFSC.Expr where
 
 import Data.Map
+import Data.Maybe (isJust)
 import Data.List
 
 newtype Var f = Var (Map [String] f)
+    deriving (Eq, Ord)
 
 constant :: t -> Var t
 constant x = Var (singleton [] x)
 
-isConstant :: Var t -> Bool
-isConstant (Var x) = keys x `elem` [[], [[]]]
 
-fromConstant :: (Num t) => Var t -> Maybe t
-fromConstant (Var x) = case keys x of
+toConstant :: (Num t) => Var t -> Maybe t
+toConstant (Var x) = case keys x of
     []   -> Just 0
     [[]] -> Just (x ! [])
     _    -> Nothing
+
+isConstant :: (Num t) => Var t -> Bool
+isConstant = isJust . toConstant 
 
 var :: Num t => String -> Var t
 var s = Var (singleton [s] 1)
