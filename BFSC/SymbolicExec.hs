@@ -13,13 +13,20 @@ import Data.Map
 
 type Cell = Var Word8
 
-type VarBinds = Map String (Either Word8 Word8)
+{- Sets of allowable values -}
+type Constraints = Map Cell Bool
+type SymbolicState = (Constraints, BFMachine Cell)
 
-type SymbolicState = (VarBinds, BFMachine Cell)
 
 type SymbolicRun = RWST () [Cell] SymbolicState []
 
 onMachine = state_ . second
+onBinds = state_ . first
+
+
+assert :: Cell -> Bool -> SymbolicRun ()
+assert cell val = onBinds (insert cell val)
+
 
 execMany = mapM_ exec
 
@@ -28,10 +35,19 @@ exec MLeft = onMachine iLeft
 exec MRight = onMachine iRight
 exec Up = onMachine $ onPtr (+1)
 exec Down = onMachine $ onPtr (subtract 1)
-exec (Loop [Down]) = onMachine $ onPtr (const 0)
+exec (Loop [Down]) = onMachine $ onPtr (const 0) -- resets
 exec (Loop [Up])   = onMachine $ onPtr (const 0)
 exec (Loop loop) | isLinear loop = execLinearLoop loop
-                 | otherwise = error "Unsupported program for symbolic execute"
+                 | otherwise = execLoop loop
+
+execLoop :: [BF] -> SymbolicRun ()
+execLoop loop = do
+    (_, machine) <- get
+    let ptr = getPtr machine
+    case toConstant ptr of
+        Just 0 -> return () -- loop is known not to execute
+        Just _ -> execMany loop >> execLoop loop -- loop is known to execute
+        Nothing -> (assert ptr False) `mplus` (assert ptr True >> execMany loop >> execLoop loop) -- branch
 
 execLinearLoop :: [BF] -> SymbolicRun ()
 execLinearLoop loop = do
