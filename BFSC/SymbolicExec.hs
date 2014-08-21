@@ -48,6 +48,7 @@ linearOp MRight = True
 linearOp Up = True
 linearOp Down = True
 linearOp (Nop _) = True
+linearOp _ = False
 
 balance MLeft = -1
 balance MRight = 1
