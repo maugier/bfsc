@@ -85,6 +85,7 @@ execLinearLoop loop = do
     case getPtr result of
         (-1) -> onMachine $ (|+| fmap (* cur) result)
         1    -> onMachine $ (|+| fmap (* negate cur) result)
+        0    -> error $ "Infinite loop detected: [" ++ show loop ++ "]"
         _    -> error $ "Division is not supported yet (subprogram " ++ show loop ++ ")"
 
 symbolicExec :: [BF] -> BFMachine Cell -> [(SymbolicState, [Cell])]
