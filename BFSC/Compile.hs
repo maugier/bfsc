@@ -41,7 +41,7 @@ prune n = RWST . (((take n . sortBy (comparing trd)).).)  .  runRWST
 {- Un BFProg qui réalise l'addition naive par une constante, en répétant
  - n fois un + ou un - -}
 linear :: Word8 -> BFProg
-linear x | x > 127   = bfprog (replicate (fromIntegral $ 256 - x ) Down)
+linear x | x > 127   = bfprog (replicate (fromIntegral $ 0 - x ) Down)
          | otherwise = bfprog (replicate (fromIntegral x) Up)
 
 {- Un BFCompile produisant une valeur fixe dans la cellule courante,
