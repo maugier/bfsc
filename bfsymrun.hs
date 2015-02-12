@@ -6,12 +6,18 @@ import Control.Monad
 
 import Data.Char
 import Data.List
-import Data.Map (toList)
+import Data.Map (toList, lookup)
 
 showConstraint (cell, True) = show cell ++ " != 0"
 showConstraint (cell, False) = show cell ++ " == 0"
 
 showVarbind (var, val) = show var ++ " -> " ++ show val
+
+showInput idx m = case Data.Map.lookup ("in"++show idx) m of
+	Nothing -> '?'
+	Just k -> chr $ fromIntegral k
+
+showInputs state = [ showInput idx (syVarbinds state) | idx <- [0 .. syVarCounter state - 1] ]
 
 showVar v = case toConstant v of
     Just val -> show $ chr (fromIntegral val)
@@ -19,6 +25,8 @@ showVar v = case toConstant v of
 
 showRun (state, output) = do
     putStrLn "-----"
+    putStr "In: "
+    putStrLn (showInputs state)
     putStr "Out: "
     putStrLn (concat . intersperse ", " $ (map showVar output))
     putStr "Known variables: "
